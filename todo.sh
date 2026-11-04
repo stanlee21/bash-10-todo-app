@@ -57,9 +57,19 @@ cmd_add() {
     echo "Task added successfully. ID: $new_id"
 }
 
-# Display tasks
+# Display all saved tasks
 cmd_list() {
-    echo "List command selected"
+    echo "MY TO-DO LIST"
+    echo "------------------------------------------------"
+
+    printf "%-5s %-10s %-10s %s\n" "ID" "STATUS" "PRIORITY" "TITLE"
+
+    echo "------------------------------------------------"
+
+    while IFS='|' read -r id status priority title; do
+        printf "%-5s %-10s %-10s %s\n" \
+            "$id" "$status" "$priority" "$title"
+    done < "$DATA_FILE"
 }
 
 # Determine which command the user entered
