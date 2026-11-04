@@ -24,9 +24,10 @@ cmd_help() {
     echo "  add     Add a new task"
     echo "  list    Display all tasks"
     echo "  help    Show this help message"
+    echo "  done    Mark a task as completed"
+    echo "  delete  Delete a task"
 }
 
-# Add a task
 # Add a new task
 cmd_add() {
     local title="$*"
@@ -72,6 +73,72 @@ cmd_list() {
     done < "$DATA_FILE"
 }
 
+# Mark a task as completed
+cmd_done() {
+    local task_id="$1"
+    local temp_file
+
+    temp_file=$(mktemp)
+
+    if ! awk -F'|' -v id="$task_id" '
+        BEGIN { found = 0 }
+
+        $1 == id {
+            $2 = "done"
+            found = 1
+        }
+
+        { print $1 "|" $2 "|" $3 "|" $4 }
+
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$DATA_FILE" > "$temp_file"; then
+        rm -f "$temp_file"
+        echo "Error: Task ID $task_id not found." >&2
+        exit 1
+    fi
+
+    mv "$temp_file" "$DATA_FILE"
+
+    echo "Task $task_id marked as completed."
+}
+
+# Delete a task
+cmd_delete() {
+    local task_id="$1"
+    local temp_file
+
+    temp_file=$(mktemp)
+
+    if ! awk -F'|' -v id="$task_id" '
+        BEGIN { found = 0 }
+
+        $1 == id {
+            found = 1
+            next
+        }
+
+        { print }
+
+        END {
+            if (!found) {
+                exit 1
+            }
+        }
+    ' "$DATA_FILE" > "$temp_file"; then
+        rm -f "$temp_file"
+        echo "Error: Task ID $task_id not found." >&2
+        exit 1
+    fi
+
+    mv "$temp_file" "$DATA_FILE"
+
+    echo "Task $task_id deleted successfully."
+}
+
 # Determine which command the user entered
 command="${1:-list}"
 
@@ -89,8 +156,16 @@ case "$command" in
     list)
         cmd_list
         ;;
+    done)
+        shift
+        cmd_done "$@"
+        ;;
     help)
         cmd_help
+        ;;
+    delete)
+        shift
+        cmd_delete "$@"
         ;;
     *)
         echo "Error: Unknown command: $command" >&2
