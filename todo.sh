@@ -29,8 +29,6 @@ cmd_help() {
 }
 
 # Add a new task
-# Add a new task
-# Add a new task
 cmd_add() {
     local title="$*"
 
@@ -82,22 +80,25 @@ cmd_list() {
     done < "$DATA_FILE"
 }
 
-# Mark a task as completed
-cmd_done() {
-    # Check whether an ID was provided
+# Validate task ID input
+validate_task_id() {
     if [[ $# -ne 1 ]]; then
         echo "Error: Please provide exactly one task ID." >&2
         exit 2
     fi
 
-    local task_id="$1"
-    local temp_file
-
-    # Check whether the ID is a positive number
-    if [[ ! "$task_id" =~ ^[1-9][0-9]*$ ]]; then
+    if [[ ! "$1" =~ ^[1-9][0-9]*$ ]]; then
         echo "Error: Task ID must be a positive number." >&2
         exit 2
     fi
+}
+
+# Mark a task as completed
+cmd_done() {
+    validate_task_id "$@"
+
+    local task_id="$1"
+    local temp_file
 
     temp_file=$(mktemp)
 
@@ -129,20 +130,10 @@ cmd_done() {
 
 # Delete a task
 cmd_delete() {
-    # Check whether an ID was provided
-    if [[ $# -ne 1 ]]; then
-        echo "Error: Please provide exactly one task ID." >&2
-        exit 2
-    fi
+    validate_task_id "$@"
 
     local task_id="$1"
     local temp_file
-
-    # Check whether the ID is a positive number
-    if [[ ! "$task_id" =~ ^[1-9][0-9]*$ ]]; then
-        echo "Error: Task ID must be a positive number." >&2
-        exit 2
-    fi
 
     temp_file=$(mktemp)
 
