@@ -29,11 +29,20 @@ cmd_help() {
 }
 
 # Add a new task
+# Add a new task
+# Add a new task
 cmd_add() {
     local title="$*"
 
+    # Check whether a title was provided
     if [[ -z "$title" ]]; then
         echo "Error: Task title is required." >&2
+        exit 2
+    fi
+
+    # Reject titles containing the field separator
+    if [[ "$title" == *"|"* ]]; then
+        echo "Error: Task title cannot contain '|'" >&2
         exit 2
     fi
 
@@ -75,8 +84,20 @@ cmd_list() {
 
 # Mark a task as completed
 cmd_done() {
+    # Check whether an ID was provided
+    if [[ $# -ne 1 ]]; then
+        echo "Error: Please provide exactly one task ID." >&2
+        exit 2
+    fi
+
     local task_id="$1"
     local temp_file
+
+    # Check whether the ID is a positive number
+    if [[ ! "$task_id" =~ ^[1-9][0-9]*$ ]]; then
+        echo "Error: Task ID must be a positive number." >&2
+        exit 2
+    fi
 
     temp_file=$(mktemp)
 
@@ -108,8 +129,20 @@ cmd_done() {
 
 # Delete a task
 cmd_delete() {
+    # Check whether an ID was provided
+    if [[ $# -ne 1 ]]; then
+        echo "Error: Please provide exactly one task ID." >&2
+        exit 2
+    fi
+
     local task_id="$1"
     local temp_file
+
+    # Check whether the ID is a positive number
+    if [[ ! "$task_id" =~ ^[1-9][0-9]*$ ]]; then
+        echo "Error: Task ID must be a positive number." >&2
+        exit 2
+    fi
 
     temp_file=$(mktemp)
 
