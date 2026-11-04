@@ -30,7 +30,42 @@ cmd_help() {
 
 # Add a new task
 cmd_add() {
+    local priority="medium"
+    local opt
+    OPTIND=1
+
+    # Read the optional priority argument
+    while getopts ":p:" opt; do
+        case "$opt" in
+            p)
+                priority="$OPTARG"
+                ;;
+            :)
+                echo "Error: Option -$OPTARG requires a value." >&2
+                exit 2
+                ;;
+            \?)
+                echo "Error: Invalid option -$OPTARG." >&2
+                exit 2
+                ;;
+        esac
+    done
+
+    # Remove processed options
+    shift $((OPTIND - 1))
+
+    # Get the task title
     local title="$*"
+
+    # Validate priority
+    case "$priority" in
+        low|medium|high)
+            ;;
+        *)
+            echo "Error: Priority must be low, medium, or high." >&2
+            exit 2
+            ;;
+    esac
 
     # Check whether a title was provided
     if [[ -z "$title" ]]; then
@@ -59,8 +94,8 @@ cmd_add() {
     # Generate the next ID
     local new_id=$((highest_id + 1))
 
-    # Save the task
-    printf '%s|todo|medium|%s\n' "$new_id" "$title" >> "$DATA_FILE"
+    # Save the task with its priority
+    printf '%s|todo|%s|%s\n' "$new_id" "$priority" "$title" >> "$DATA_FILE"
 
     echo "Task added successfully. ID: $new_id"
 }
@@ -74,10 +109,25 @@ cmd_list() {
 
     echo "------------------------------------------------"
 
+    awk -F'|' '
+        {
+            if ($3 == "high") {
+                priority = 1
+            } else if ($3 == "medium") {
+                priority = 2
+            } else {
+                priority = 3
+            }
+
+            print priority "|" $0
+        }
+    ' "$DATA_FILE" |
+    sort -t'|' -k1,1n |
+    cut -d'|' -f2- |
     while IFS='|' read -r id status priority title; do
         printf "%-5s %-10s %-10s %s\n" \
             "$id" "$status" "$priority" "$title"
-    done < "$DATA_FILE"
+    done
 }
 
 # Validate task ID input
